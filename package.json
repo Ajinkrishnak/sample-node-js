@@ -1,0 +1,27 @@
+{
+  "name": "sample-node-js-",
+  "version": "1.0.0",
+  "description": "Inspirational quotes API built with Fastify, Zod, and SQLite.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ajinkrishnak/sample-node-js-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Ajinkrishnak/sample-node-js-/issues"
+  },
+  "homepage": "https://github.com/Ajinkrishnak/sample-node-js-#readme",
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "fastify": "^5.10.0",
+    "zod": "^4.4.3"
+  }
+}
