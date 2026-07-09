@@ -1,12 +1,16 @@
 'use strict'
 
+require('dotenv/config')
+
 const fastify = require('fastify')({
   logger: true
 })
+const { createBearerAuth } = require('./auth')
 const { createQuoteSchema, listQuotesQuerySchema, quoteParamsSchema } = require('./schemas')
 const { validateRequest } = require('./validation')
 const { closeDatabase, createQuote, deleteQuote, listQuotes } = require('./db')
 
+fastify.addHook('onRequest', createBearerAuth())
 fastify.decorateRequest('validated', null)
 
 fastify.get('/', async () => {

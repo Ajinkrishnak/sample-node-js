@@ -48,6 +48,30 @@ You can change the host or port with environment variables:
 HOST=127.0.0.1 PORT=4000 npm start
 ```
 
+## Authentication
+
+All API routes require a bearer token.
+
+Set `API_BEARER_TOKEN` before starting the server:
+
+```sh
+API_BEARER_TOKEN="change-this-token" npm start
+```
+
+Send the token on every request:
+
+```http
+Authorization: Bearer change-this-token
+```
+
+Requests without a valid token return `401`:
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
 ## Database
 
 The app uses Prisma with a local SQLite database:
@@ -62,7 +86,7 @@ The default connection string is:
 DATABASE_URL="file:./data/quotes.sqlite"
 ```
 
-You can copy `.env.example` to `.env` and change `DATABASE_URL` if needed. The Prisma schema is defined in:
+You can copy `.env.example` to `.env`, set `API_BEARER_TOKEN`, and change `DATABASE_URL` if needed. The Prisma schema is defined in:
 
 ```text
 prisma/schema.prisma
@@ -98,7 +122,8 @@ GET /health
 Example:
 
 ```sh
-curl http://127.0.0.1:3000/health
+curl http://127.0.0.1:3000/health \
+  -H "Authorization: Bearer change-this-token"
 ```
 
 Response:
@@ -134,6 +159,7 @@ Example:
 
 ```sh
 curl -X POST http://127.0.0.1:3000/quotes \
+  -H "Authorization: Bearer change-this-token" \
   -H "Content-Type: application/json" \
   -d '{"quote":"Stay hungry, stay foolish.","author":"Steve Jobs"}'
 ```
@@ -165,7 +191,8 @@ Query parameters:
 Example:
 
 ```sh
-curl "http://127.0.0.1:3000/quotes?page=1&limit=10"
+curl "http://127.0.0.1:3000/quotes?page=1&limit=10" \
+  -H "Authorization: Bearer change-this-token"
 ```
 
 Response:
@@ -202,7 +229,8 @@ Path parameters:
 Example:
 
 ```sh
-curl -X DELETE http://127.0.0.1:3000/quotes/1
+curl -X DELETE http://127.0.0.1:3000/quotes/1 \
+  -H "Authorization: Bearer change-this-token"
 ```
 
 Success response:
