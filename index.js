@@ -33,7 +33,7 @@ fastify.get('/quotes', {
     query: listQuotesQuerySchema
   })
 }, async (request) => {
-  return listQuotes(request.validated.query)
+  return await listQuotes(request.validated.query)
 })
 
 fastify.post('/quotes', {
@@ -41,7 +41,7 @@ fastify.post('/quotes', {
     body: createQuoteSchema
   })
 }, async (request, reply) => {
-  const quote = createQuote(request.validated.body)
+  const quote = await createQuote(request.validated.body)
 
   return reply.code(201).send({
     data: quote
@@ -53,7 +53,7 @@ fastify.delete('/quotes/:id', {
     params: quoteParamsSchema
   })
 }, async (request, reply) => {
-  const quote = deleteQuote(request.validated.params.id)
+  const quote = await deleteQuote(request.validated.params.id)
 
   if (!quote) {
     return reply.code(404).send({
@@ -67,7 +67,7 @@ fastify.delete('/quotes/:id', {
 })
 
 fastify.addHook('onClose', async () => {
-  closeDatabase()
+  await closeDatabase()
 })
 
 const start = async () => {

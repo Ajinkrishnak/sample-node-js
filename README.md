@@ -7,7 +7,7 @@ Built with:
 - Node.js
 - Fastify
 - Zod validation
-- SQLite using `better-sqlite3`
+- SQLite using Prisma
 
 ## Requirements
 
@@ -18,6 +18,8 @@ Built with:
 
 ```sh
 npm install
+npm run prisma:generate
+npm run prisma:push
 ```
 
 ## Run
@@ -48,20 +50,38 @@ HOST=127.0.0.1 PORT=4000 npm start
 
 ## Database
 
-The app creates a local SQLite database automatically on startup:
+The app uses Prisma with a local SQLite database:
 
 ```text
 data/quotes.sqlite
 ```
 
-The `quotes` table is created if it does not already exist:
+The default connection string is:
+
+```text
+DATABASE_URL="file:./data/quotes.sqlite"
+```
+
+You can copy `.env.example` to `.env` and change `DATABASE_URL` if needed. The Prisma schema is defined in:
+
+```text
+prisma/schema.prisma
+```
+
+Sync the database schema with:
+
+```sh
+npm run prisma:push
+```
+
+The `quotes` model maps to this SQLite table:
 
 ```sql
-CREATE TABLE IF NOT EXISTS quotes (
+CREATE TABLE quotes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   quote TEXT NOT NULL,
   author TEXT NOT NULL,
-  created_date TEXT NOT NULL DEFAULT (datetime('now'))
+  created_date TEXT NOT NULL
 );
 ```
 

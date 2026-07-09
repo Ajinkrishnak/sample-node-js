@@ -1,0 +1,21 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Quote {
+  id          Int      @id @default(autoincrement())
+  quote       String
+  author      String
+  createdDate String   @map("created_date")
+
+  @@map("quotes")
+}

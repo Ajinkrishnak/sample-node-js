@@ -1,79 +1,94 @@
 'use strict'
 
+require('dotenv/config')
+
 const fs = require('node:fs')
 const path = require('node:path')
-const Database = require('better-sqlite3')
+const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3')
+const { PrismaClient } = require('@prisma/client')
 
 const dataDir = path.join(__dirname, 'data')
 fs.mkdirSync(dataDir, { recursive: true })
 
-const databasePath = process.env.DATABASE_PATH || path.join(dataDir, 'quotes.sqlite')
-const db = new Database(databasePath)
+function resolveDatabaseUrl() {
+  if (process.env.DATABASE_PATH) {
+    return `file:${path.resolve(process.env.DATABASE_PATH)}`
+  }
 
-db.pragma('journal_mode = WAL')
-
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS quotes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    quote TEXT NOT NULL,
-    author TEXT NOT NULL,
-    created_date TEXT NOT NULL DEFAULT (datetime('now'))
-  )
-`).run()
-
-const insertQuoteStatement = db.prepare(`
-  INSERT INTO quotes (quote, author)
-  VALUES (@quote, @author)
-`)
-
-const getQuoteStatement = db.prepare(`
-  SELECT id, quote, author, created_date
-  FROM quotes
-  WHERE id = ?
-`)
-
-const listQuotesStatement = db.prepare(`
-  SELECT id, quote, author, created_date
-  FROM quotes
-  ORDER BY datetime(created_date) DESC, id DESC
-  LIMIT ? OFFSET ?
-`)
-
-const countQuotesStatement = db.prepare(`
-  SELECT COUNT(*) AS total
-  FROM quotes
-`)
-
-const deleteQuoteStatement = db.prepare(`
-  DELETE FROM quotes
-  WHERE id = ?
-`)
-
-function createQuote(input) {
-  const result = insertQuoteStatement.run(input)
-
-  return getQuoteStatement.get(result.lastInsertRowid)
+  return process.env.DATABASE_URL || 'file:./data/quotes.sqlite'
 }
 
-function deleteQuote(id) {
-  const quote = getQuoteStatement.get(id)
+const adapter = new PrismaBetterSqlite3({
+  url: resolveDatabaseUrl()
+})
+const prisma = new PrismaClient({
+  adapter
+})
+
+function getCurrentTimestamp() {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ')
+}
+
+function serializeQuote(quote) {
+  return {
+    id: quote.id,
+    quote: quote.quote,
+    author: quote.author,
+    created_date: quote.createdDate
+  }
+}
+
+async function createQuote(input) {
+  const quote = await prisma.quote.create({
+    data: {
+      ...input,
+      createdDate: getCurrentTimestamp()
+    }
+  })
+
+  return serializeQuote(quote)
+}
+
+async function deleteQuote(id) {
+  const quote = await prisma.quote.findUnique({
+    where: {
+      id
+    }
+  })
 
   if (!quote) {
     return null
   }
 
-  deleteQuoteStatement.run(id)
+  await prisma.quote.delete({
+    where: {
+      id
+    }
+  })
 
-  return quote
+  return serializeQuote(quote)
 }
 
-function listQuotes({ page, limit }) {
+async function listQuotes({ page, limit }) {
   const offset = (page - 1) * limit
-  const total = countQuotesStatement.get().total
-  const quotes = listQuotesStatement.all(limit, offset)
+  const [total, quotes] = await prisma.$transaction([
+    prisma.quote.count(),
+    prisma.quote.findMany({
+      orderBy: [
+        {
+          createdDate: 'desc'
+        },
+        {
+          id: 'desc'
+        }
+      ],
+      skip: offset,
+      take: limit
+    })
+  ])
 
   return {
-    data: quotes,
+    data: quotes.map(serializeQuote),
     pagination: {
       page,
       limit,
@@ -83,8 +98,8 @@ function listQuotes({ page, limit }) {
   }
 }
 
-function closeDatabase() {
-  db.close()
+async function closeDatabase() {
+  await prisma.$disconnect()
 }
 
 module.exports = {

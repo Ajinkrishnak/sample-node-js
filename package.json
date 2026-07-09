@@ -5,6 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
     "start": "node index.js"
   },
   "repository": {
@@ -20,8 +23,14 @@
   },
   "homepage": "https://github.com/Ajinkrishnak/sample-node-js-#readme",
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "better-sqlite3": "^12.11.1",
     "fastify": "^5.10.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2",
+    "prisma": "^6.19.3"
   }
 }
