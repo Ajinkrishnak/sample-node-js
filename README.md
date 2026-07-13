@@ -50,21 +50,44 @@ HOST=127.0.0.1 PORT=4000 npm start
 
 ## Authentication
 
-All API routes require a bearer token.
+Quote routes require a bearer JWT. The root route, health check, and token endpoint are public.
 
-Set `API_BEARER_TOKEN` before starting the server:
+Set auth configuration before starting the server:
 
 ```sh
-API_BEARER_TOKEN="change-this-token" npm start
+AUTH_JWT_SECRET="$(openssl rand -hex 32)" \
+AUTH_CLIENT_ID="quotes-api-client" \
+AUTH_CLIENT_SECRET="$(openssl rand -hex 32)" \
+AUTH_ACCESS_TOKEN_TTL_SECONDS="900" \
+npm start
 ```
 
-Send the token on every request:
+Request an access token with the client credentials flow:
+
+```sh
+curl -X POST http://127.0.0.1:3000/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"grant_type":"client_credentials","client_id":"quotes-api-client","client_secret":"your-client-secret"}'
+```
+
+Response:
+
+```json
+{
+  "token_type": "Bearer",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 900,
+  "scope": "quotes:read quotes:write"
+}
+```
+
+Send the returned JWT on protected requests:
 
 ```http
-Authorization: Bearer change-this-token
+Authorization: Bearer <access_token>
 ```
 
-Requests without a valid token return `401`:
+Protected requests without a valid JWT return `401`:
 
 ```json
 {
@@ -86,7 +109,7 @@ The default connection string is:
 DATABASE_URL="file:./data/quotes.sqlite"
 ```
 
-You can copy `.env.example` to `.env`, set `API_BEARER_TOKEN`, and change `DATABASE_URL` if needed. The Prisma schema is defined in:
+You can copy `.env.example` to `.env`, set the auth secrets, and change `DATABASE_URL` if needed. The Prisma schema is defined in:
 
 ```text
 prisma/schema.prisma
@@ -122,8 +145,7 @@ GET /health
 Example:
 
 ```sh
-curl http://127.0.0.1:3000/health \
-  -H "Authorization: Bearer change-this-token"
+curl http://127.0.0.1:3000/health
 ```
 
 Response:
@@ -132,6 +154,33 @@ Response:
 {
   "status": "ok",
   "uptime": 12.34
+}
+```
+
+### Create Access Token
+
+```http
+POST /auth/token
+```
+
+Request body:
+
+```json
+{
+  "grant_type": "client_credentials",
+  "client_id": "quotes-api-client",
+  "client_secret": "your-client-secret"
+}
+```
+
+Success response:
+
+```json
+{
+  "token_type": "Bearer",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 900,
+  "scope": "quotes:read quotes:write"
 }
 ```
 
@@ -159,7 +208,7 @@ Example:
 
 ```sh
 curl -X POST http://127.0.0.1:3000/quotes \
-  -H "Authorization: Bearer change-this-token" \
+  -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{"quote":"Stay hungry, stay foolish.","author":"Steve Jobs"}'
 ```
@@ -192,7 +241,7 @@ Example:
 
 ```sh
 curl "http://127.0.0.1:3000/quotes?page=1&limit=10" \
-  -H "Authorization: Bearer change-this-token"
+  -H "Authorization: Bearer <access_token>"
 ```
 
 Response:
@@ -230,7 +279,7 @@ Example:
 
 ```sh
 curl -X DELETE http://127.0.0.1:3000/quotes/1 \
-  -H "Authorization: Bearer change-this-token"
+  -H "Authorization: Bearer <access_token>"
 ```
 
 Success response:
